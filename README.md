@@ -1,63 +1,238 @@
-# Skipera Chrome Extension
+# Skipera — AI-Powered Coursera Automation Extension
 
-The Skipera Chrome Extension is a zero-setup, privacy-first tool that solves Coursera quizzes and assignments directly in your browser using AI.
+Skipera is a Chrome extension that explores the use of **LLM-powered browser automation for Coursera courses**.
 
-By running entirely within Chrome, it eliminates the need to install Python, run scripts, or manually extract session cookies.
+It integrates directly with the user's active Coursera session and uses configurable LLM providers to analyze course content, interact with course activities, and automate repetitive course workflows.
+
+> **⚠️ Educational / Experimental Project**
+>
+> Skipera is an experimental automation project intended for research and learning around browser automation, LLM orchestration, API integration, and Chrome Extension development.
+>
+> Automated completion of graded coursework may conflict with course rules or academic-integrity policies. Users are responsible for complying with the terms and policies of the platforms and courses they use it with.
 
 ## Features
 
-- **Full Course Automation**: Skip videos, auto-read supplements, and solve quizzes across an entire course with a single click.
-- **Zero Configuration**: No `.env` files or session cookie extraction needed. It uses your active Coursera login session.
-- **Privacy-First**: The extension runs locally. Your API key is stored securely in your browser's local storage (`chrome.storage.local`).
-- **NVIDIA NIM Integration**: Connects directly to NVIDIA's high-performance API to evaluate and solve complex quizzes.
-- **Intelligent Retry Logic**: Caches partial correctness and logically deduces the correct combination for complex multi-select questions.
-- **Multi-Provider & Key Stacking**: Supports NVIDIA, OpenAI, Anthropic, and Gemini. Stack multiple comma-separated keys to enable concurrent solving and automatic fallback when hitting rate limits (429) or out of credits. *(Tip: Use only one key for normal usage!)*
-
-## Installation (Developer Mode)
-
-Currently, the extension must be loaded as an "Unpacked Extension" in Developer Mode.
-
-1. Clone this repository to your local machine:
-   ```bash
-   git clone https://github.com/yamantaka-singh/skipera.git
-   ```
-2. Open Google Chrome and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** using the toggle switch in the top right corner.
-4. Click the **Load unpacked** button in the top left.
-5. Select the `extension/` folder inside the cloned `skipera` repository.
-6. The Skipera extension icon should now appear in your browser toolbar!
-
-## Usage
-
-1. **Get an API Key**: Ensure you have an active NVIDIA API key (from `build.nvidia.com`).
-2. **Configure the Extension**:
-   - Click the Skipera icon in your Chrome toolbar.
-   - Enter your **NVIDIA API Key**.
-   - Select your preferred model (e.g., `Nemotron 3 Ultra 550B`).
-3. **Solve a Quiz**:
-   - Navigate to an active Coursera quiz or assignment page (e.g., `https://www.coursera.org/learn/.../exam/.../assessment`).
-   - Open the Skipera extension popup and click **Solve Current Quiz**.
-4. **Solve an Entire Course**:
-   - Navigate to any page within a Coursera course.
-   - Open the Skipera extension popup and click **Solve Entire Course**.
-   - The extension will run in the background, sequentially finding uncompleted videos, readings, and quizzes, processing them automatically while showing progress via a Toast UI.
+- **Course Automation** — Processes course materials and navigates through course activities.
+- **AI Quiz Analysis** — Uses LLMs to analyze quiz questions and generate answers.
+- **Multiple LLM Providers** — Supports NVIDIA, OpenAI, Anthropic, and Gemini.
+- **API Key Stacking** — Supports multiple API keys with retry and fallback handling.
+- **Course Context** — Uses relevant course readings and available lecture transcripts as context for LLM requests.
+- **Retry & Recovery** — Handles API rate limits, temporary provider failures, and model fallback.
+- **Background Orchestration** — Runs long-running automation through a Manifest V3 service worker.
+- **Progress Tracking** — Displays automation progress through the extension UI.
+- **Zero Backend Requirement** — The extension communicates directly with supported APIs from the browser.
 
 ## Architecture
 
-- **Manifest V3**: Built using the latest Chrome extension standards.
-- **Service Worker (`background.js`)**: Orchestrates the full course state machine in the background to prevent interruptions during navigation, and proxies API requests to NVIDIA to bypass Coursera's strict Content Security Policy (CSP).
-- **Content Script (`content.js`)**: Injected into Coursera pages to extract course metadata and display progress Toast notifications.
-- **Glassmorphism UI (`popup.html/css`)**: A sleek, modern popup interface.
+```text
+┌───────────────────────────────┐
+│        Coursera Website       │
+│                               │
+│  Course • Videos • Readings   │
+│  Quizzes • Assignments        │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│       Chrome Extension        │
+│          Manifest V3          │
+├───────────────────────────────┤
+│                               │
+│  Content Script               │
+│       │                       │
+│       ▼                       │
+│  Background Service Worker    │
+│       │                       │
+│       ├── Course API Layer    │
+│       ├── Quiz Solver         │
+│       ├── Orchestrator        │
+│       ├── Agent Logic         │
+│       └── Dashboard Store     │
+│                               │
+└───────────────┬───────────────┘
+                │
+                ▼
+       ┌─────────────────┐
+       │   LLM Providers │
+       ├─────────────────┤
+       │ NVIDIA           │
+       │ OpenAI           │
+       │ Anthropic        │
+       │ Gemini           │
+       └─────────────────┘
+```
 
-## Credits
+## Tech Stack
 
-Developed by **Mrityunjay** and **serv0id**.
+### Browser Extension
 
-<a href="https://github.com/yamantaka-singh">
-  <img src="https://github.com/yamantaka-singh.png" width="50" height="50" style="border-radius:50%; margin-right:10px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" alt="Mrityunjay">
-</a>
-<a href="https://github.com/serv0id">
-  <img src="https://github.com/serv0id.png" width="50" height="50" style="border-radius:50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" alt="serv0id">
-</a>
+- Chrome Extension Manifest V3
+- JavaScript
+- Chrome Extensions APIs
+- Service Workers
+- Content Scripts
+- Chrome Storage API
 
-*Check out the [Skipera Parent Repository](https://github.com/serv0id/skipera) for more information.*
+### AI
+
+- NVIDIA NIM
+- OpenAI API
+- Anthropic API
+- Google Gemini API
+
+### Course Integration
+
+- Coursera APIs
+- Coursera GraphQL endpoints
+- Browser session authentication
+- CSRF token handling
+
+## How It Works
+
+### 1. Course Discovery
+
+Skipera reads the current Coursera course and retrieves information about available modules, lessons, and course items.
+
+### 2. Content Processing
+
+Relevant course material such as readings and available lecture transcripts can be collected and used as context for subsequent AI requests.
+
+### 3. AI Processing
+
+The extension sends structured questions and contextual information to the selected LLM provider.
+
+The response is parsed into a structured format containing the generated answer and associated question information.
+
+### 4. Automation
+
+The background service worker coordinates the workflow and interacts with the Coursera course APIs to process supported course activities.
+
+### 5. Progress Tracking
+
+The extension maintains course-processing state and reports progress through the extension interface.
+
+## Installation
+
+Skipera currently runs as an **unpacked Chrome extension**.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/HarshitS17/skipera-extension.git
+cd skipera-extension
+```
+
+### 2. Open Chrome Extensions
+
+Navigate to:
+
+```text
+chrome://extensions/
+```
+
+Enable **Developer mode**.
+
+### 3. Load the extension
+
+Click **Load unpacked** and select the repository's extension directory containing `manifest.json`.
+
+### 4. Configure an LLM provider
+
+Open the Skipera extension and configure a supported provider and API key.
+
+## Configuration
+
+Skipera supports multiple LLM providers:
+
+| Provider | API |
+|---|---|
+| NVIDIA | NVIDIA NIM |
+| OpenAI | OpenAI API |
+| Anthropic | Anthropic API |
+| Gemini | Google Gemini API |
+
+API keys are stored using Chrome's local extension storage.
+
+**Never commit API keys, credentials, session tokens, or other secrets to the repository.**
+
+## Project Structure
+
+```text
+skipera-extension/
+│
+├── background/
+│   ├── agents.js
+│   ├── background.js
+│   ├── courseraApi.js
+│   ├── dashboardStore.js
+│   ├── llmProviders.js
+│   ├── queries.js
+│   ├── quizSolver.js
+│   └── solverOrchestrator.js
+│
+├── content/
+│   ├── content.css
+│   └── content.js
+│
+├── popup/
+│   ├── index.html
+│   ├── popup.css
+│   └── popup.js
+│
+├── popup-react/
+│   └── ...
+│
+└── manifest.json
+```
+
+## Security & Privacy Considerations
+
+Skipera operates inside the user's browser and relies on the user's active Coursera session.
+
+The extension requires permissions that allow it to interact with Coursera pages and access relevant browser data required for its functionality.
+
+Users should:
+
+- Review the extension permissions before installing it.
+- Use API keys that they are comfortable storing locally.
+- Avoid using shared or public computers with personal API credentials.
+- Never commit API keys or authentication tokens.
+- Review the code before loading the extension as an unpacked extension.
+
+## Limitations
+
+Skipera depends heavily on Coursera's current website structure and internal APIs. Changes to Coursera can therefore break parts of the extension.
+
+LLM responses are also probabilistic and may contain incorrect answers.
+
+API availability, rate limits, model availability, and provider-specific restrictions may affect execution.
+
+## Why I Built It
+
+The primary purpose of this project was to explore how **LLMs, browser extensions, API integrations, and autonomous workflows** can work together inside a real web application.
+
+The project provided hands-on experience with:
+
+- Browser automation
+- Chrome Extension architecture
+- Background service workers
+- API orchestration
+- LLM provider abstraction
+- Structured LLM responses
+- Retry and fallback strategies
+- Course-content extraction
+- Stateful automation workflows
+
+## Disclaimer
+
+This project is provided for **educational and experimental purposes**.
+
+Using automation to complete graded assessments, assignments, or other coursework may violate the rules of a particular course or educational institution.
+
+The user is solely responsible for how the software is used and for complying with applicable platform terms, course policies, and academic-integrity requirements.
+
+## Status
+
+**Experimental / Personal Project**
+
+The project is not affiliated with or endorsed by Coursera or any of the LLM providers supported by the extension.
